@@ -1,41 +1,183 @@
-# Compiled Lua sources
-luac.out
+local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
+local UserInputService = game:GetService("UserInputService")
+local Random = Random.new()
 
-# luarocks build files
-*.src.rock
-*.zip
-*.tar.gz
+-- Create UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer.PlayerGui -- Attach to LocalPlayer's PlayerGui for visibility
 
-# Object files
-*.o
-*.os
-*.ko
-*.obj
-*.elf
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.3, 0, 0.4, 0)
+frame.Position = UDim2.new(0.35, 0, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- Darker background color
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
 
-# Precompiled Headers
-*.gch
-*.pch
+local serverPlayerLabel = Instance.new("TextLabel")
+serverPlayerLabel.Size = UDim2.new(1, -20, 0, 30)
+serverPlayerLabel.Position = UDim2.new(0, 10, 0, 10)
+serverPlayerLabel.Text = "Player List:"
+serverPlayerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+serverPlayerLabel.TextWrapped = true
+serverPlayerLabel.Font = Enum.Font.GothamBold
+serverPlayerLabel.TextSize = 18
+serverPlayerLabel.Parent = frame
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-*.def
-*.exp
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -20, 0.7, -50)
+scrollingFrame.Position = UDim2.new(0, 10, 0, 40)
+scrollingFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.BorderSizePixel = 0
+scrollingFrame.Parent = frame
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+local playerList = Instance.new("TextBox")
+playerList.Size = UDim2.new(1, 0, 1, 0)
+playerList.Position = UDim2.new(0, 0, 0, 0)
+playerList.Text = ""
+playerList.TextColor3 = Color3.fromRGB(255, 255, 255)
+playerList.TextWrapped = true
+playerList.ClearTextOnFocus = false  -- Prevent clearing text on focus
+playerList.MultiLine = true
+playerList.BackgroundTransparency = 1
+playerList.Font = Enum.Font.SourceSans
+playerList.TextSize = 16
+playerList.Parent = scrollingFrame
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+local avatarFrame = Instance.new("Frame")
+avatarFrame.Size = UDim2.new(0.3, 0, 0.3, 0)
+avatarFrame.Position = UDim2.new(0.35, 0, 0.8, 0)
+avatarFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+avatarFrame.BorderSizePixel = 0
+avatarFrame.Parent = screenGui
 
+local avatarImage = Instance.new("ImageLabel")
+avatarImage.Size = UDim2.new(0.8, 0, 0.8, 0)
+avatarImage.Position = UDim2.new(0.1, 0, 0.1, 0)
+avatarImage.BackgroundTransparency = 1
+avatarImage.Parent = avatarFrame
+
+local updateButton = Instance.new("TextButton")
+updateButton.Size = UDim2.new(0.5, -20, 0, 30)
+updateButton.Position = UDim2.new(0.5, -90, 0.75, 0)
+updateButton.AnchorPoint = Vector2.new(0.5, 0)
+updateButton.Text = "Update Player List"
+updateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+updateButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- Slightly lighter button color
+updateButton.BorderSizePixel = 0
+updateButton.Font = Enum.Font.GothamSemibold
+updateButton.TextSize = 18
+updateButton.Parent = frame
+
+local randomButton = Instance.new("TextButton")
+randomButton.Size = UDim2.new(0.5, -20, 0, 30)
+randomButton.Position = UDim2.new(0.5, -90, 0.85, 0)
+randomButton.AnchorPoint = Vector2.new(0.5, 0)
+randomButton.Text = "Pick Random Name"
+randomButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+randomButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- Slightly lighter button color
+randomButton.BorderSizePixel = 0
+randomButton.Font = Enum.Font.GothamSemibold
+randomButton.TextSize = 18
+randomButton.Parent = frame
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0.5, -20, 0, 30)
+closeButton.Position = UDim2.new(0.5, -90, 0.95, 0)
+closeButton.AnchorPoint = Vector2.new(0.5, 0)
+closeButton.Text = "Close"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60) -- Slightly lighter button color
+closeButton.BorderSizePixel = 0
+closeButton.Font = Enum.Font.GothamSemibold
+closeButton.TextSize = 18
+closeButton.Parent = frame
+
+-- Function to pick a random player from the server player list
+local function pickRandomName()
+    local players = Players:GetPlayers()
+    if #players > 0 then
+        local randomIndex = Random:NextInteger(1, #players)
+        local randomPlayer = players[randomIndex]
+        local randomName = randomPlayer.DisplayName  -- Use DisplayName instead of Name
+        playerList.Text = randomName .. " (" .. randomPlayer.Name .. ")" -- Display username in parentheses
+
+        -- Display avatar image
+        local character = randomPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                local head = character:FindFirstChild("Head")
+                if head then
+                    local headMesh = head:FindFirstChildOfClass("SpecialMesh")
+                    if headMesh then
+                        local assetId = headMesh.MeshId
+                        avatarImage.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. randomPlayer.UserId .. "&width=420&height=420&format=png" -- Larger image for better quality
+                    end
+                end
+            end
+        end
+    else
+        playerList.Text = "No players in server"
+        avatarImage.Image = ""  -- Clear avatar image if no players
+    end
+end
+
+-- Function to update player list
+local function updatePlayerList()
+    local players = Players:GetPlayers()
+    local names = {}
+    for _, player in ipairs(players) do
+        table.insert(names, player.DisplayName .. " (" .. player.Name .. ")")  -- Concatenate display name and username
+    end
+    playerList.Text = table.concat(names, "\n")
+
+    -- Adjust scrolling frame size based on text size
+    local textBounds = playerList.TextBounds
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, textBounds.Y)
+end
+
+-- Connect button click to update player list function
+updateButton.MouseButton1Click:Connect(function()
+    updatePlayerList()
+end)
+
+-- Connect button click to pick random name function
+randomButton.MouseButton1Click:Connect(function()
+    pickRandomName()
+end)
+
+-- Connect button click to close function
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Make the GUI draggable
+local dragging
+local dragStartOffset
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStartOffset = frame.Position - UDim2.new(0, input.Position.X, 0, input.Position.Y)
+        frame.Position = UDim2.new(0, input.Position.X, 0, input.Position.Y)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local newPosition = UDim2.new(0, input.Position.X, 0, input.Position.Y) + dragStartOffset
+        frame.Position = newPosition
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Update player list initially
+updatePlayerList()
+remove all the instruction
